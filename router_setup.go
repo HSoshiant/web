@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 )
@@ -257,16 +258,24 @@ func validateContext(ctx interface{}, parentCtxType reflect.Type) {
 		panic("web: Context needs to be a struct type")
 	}
 
-	if parentCtxType != nil && parentCtxType != ctxType {
-		if ctxType.NumField() == 0 {
-			panic("web: Context needs to have first field be a pointer to parent context")
-		}
+	fldType := ctxType
+	return
+	if parentCtxType != nil {
+		for {
+			if fldType.Kind() == reflect.Ptr {
+				fldType = fldType.Elem()
+			}
+			fmt.Println(fldType.Name())
+			// Ensure fld is a pointer to parentCtxType
+			if fldType == parentCtxType {
+				break
+			}
 
-		fldType := ctxType.Field(0).Type
+			if fldType.NumField() == 0 {
+				panic("web: Context needs to have first field be a pointer to parent context")
+			}
 
-		// Ensure fld is a pointer to parentCtxType
-		if fldType != reflect.PtrTo(parentCtxType) {
-			panic("web: Context needs to have first field be a pointer to parent context")
+			fldType = fldType.Field(0).Type
 		}
 	}
 }
