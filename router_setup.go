@@ -1,7 +1,6 @@
 package web
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 )
@@ -259,14 +258,11 @@ func validateContext(ctx interface{}, parentCtxType reflect.Type) {
 	}
 
 	fldType := ctxType
-	return
 	if parentCtxType != nil {
 		for {
 			if fldType.Kind() == reflect.Ptr {
 				fldType = fldType.Elem()
 			}
-			fmt.Println(fldType.Name())
-			// Ensure fld is a pointer to parentCtxType
 			if fldType == parentCtxType {
 				break
 			}
@@ -274,7 +270,6 @@ func validateContext(ctx interface{}, parentCtxType reflect.Type) {
 			if fldType.NumField() == 0 {
 				panic("web: Context needs to have first field be a pointer to parent context")
 			}
-
 			fldType = fldType.Field(0).Type
 		}
 	}
