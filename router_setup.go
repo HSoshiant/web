@@ -253,24 +253,26 @@ func (r *Router) depth() int {
 func validateContext(ctx interface{}, parentCtxType reflect.Type) {
 	ctxType := reflect.TypeOf(ctx)
 
-	if ctxType.Kind() != reflect.Struct {
-		panic("web: Context needs to be a struct type")
-	}
-
-	fldType := ctxType
 	if parentCtxType != nil {
 		for {
-			if fldType.Kind() == reflect.Ptr {
-				fldType = fldType.Elem()
+			if ctxType.Kind() == reflect.Ptr {
+				ctxType = ctxType.Elem()
 			}
-			if fldType == parentCtxType {
+			if ctxType.Kind() != reflect.Struct {
+				if ctxType == reflect.TypeOf(ctx) {
+					panic("web: Context needs to be a struct type\n " + ctxType.String())
+				} else {
+					panic("web: Context needs to have first field be a pointer to parent context\n" +
+						"Main Context: " + parentCtxType.String() + " Given Context: " + reflect.TypeOf(ctx).String())
+				}
+			}
+			if ctxType == parentCtxType {
 				break
 			}
-
-			if fldType.NumField() == 0 {
+			if ctxType.NumField() == 0 {
 				panic("web: Context needs to have first field be a pointer to parent context")
 			}
-			fldType = fldType.Field(0).Type
+			ctxType = ctxType.Field(0).Type
 		}
 	}
 }

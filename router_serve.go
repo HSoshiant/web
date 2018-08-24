@@ -220,7 +220,6 @@ func contextsFor(contexts []reflect.Value, routers []*Router) []reflect.Value {
 
 	for i := 1; i < routersLen; i++ {
 		var ctx reflect.Value
-		fmt.Println(contexts[i-1].String())
 		if routers[i].contextType == routers[i-1].contextType {
 			ctx = contexts[i-1]
 		} else {
