@@ -125,7 +125,11 @@ func (r *Router) Subrouter(ctx interface{}, pathPrefix string) *Router {
 
 	// Create new router, link up hierarchy
 	newRouter := &Router{parent: r}
-	newRouter.contextType = validateContext(ctx, r.contextType.Type)
+	contextType, err := validateContext(ctx, r.contextType.Type)
+	if err != nil {
+		panic(err)
+	}
+	newRouter.contextType = *contextType
 	r.children = append(r.children, newRouter)
 
 	// Increment maxChildrenDepth if this is the first child of the router
@@ -255,7 +259,7 @@ func (r *Router) depth() int {
 //
 
 // Panics unless validation is correct
-func validateContext(ctx interface{}, parentCtxType reflect.Type) ContextSt {
+func validateContext(ctx interface{}, parentCtxType reflect.Type) (*ContextSt, error) {
 	doCheck := func(ctxType reflect.Type, parentCtxType reflect.Type) error {
 		for {
 			if ctxType.Kind() == reflect.Ptr {
@@ -283,11 +287,11 @@ func validateContext(ctx interface{}, parentCtxType reflect.Type) ContextSt {
 	ctxType := reflect.TypeOf(ctx)
 	if err1 := doCheck(ctxType, parentCtxType); err1 != nil {
 		if err2 := doCheck(parentCtxType, ctxType); err2 != nil {
-			panic(err1)
+			return nil, err1
 		}
-		return ContextSt{ctxType, false}
+		return &ContextSt{ctxType, false}, nil
 	}
-	return ContextSt{ctxType, true}
+	return &ContextSt{ctxType, true}, nil
 }
 
 // Panics unless fn is a proper handler wrt ctxType
@@ -357,8 +361,10 @@ func isValidHandler(vfn reflect.Value, ctxType reflect.Type, types ...reflect.Ty
 	} else if numIn == (typesLen + 1) {
 		// context, types
 		firstArgType := fnType.In(0)
-		if firstArgType != reflect.PtrTo(ctxType) && firstArgType != emptyInterfaceType {
-			return false
+		if firstArgType != emptyInterfaceType {
+			if _, err := validateContext(reflect.Indirect(reflect.New(firstArgType.Elem())).Interface(), ctxType); err != nil {
+				return false
+			}
 		}
 		typesStartIdx = 1
 	} else {
