@@ -223,9 +223,10 @@ func contextsFor(contexts []reflect.Value, routers []*Router) []reflect.Value {
 		if routers[i].contextType.Type == routers[i-1].contextType.Type {
 			ctx = contexts[i-1]
 		} else {
-			ctx = reflect.New(routers[i].contextType.Type)
+			ctxType := routers[i].contextType.Type
 			// set the first field to the parent
 			if routers[i].contextType.IsDerived {
+				ctx = reflect.New(ctxType)
 				childCtx := ctx
 				for {
 					f := reflect.Indirect(childCtx).Field(0)
@@ -240,13 +241,11 @@ func contextsFor(contexts []reflect.Value, routers []*Router) []reflect.Value {
 				}
 			} else {
 				childCtx := contexts[i-1]
+				ctxType = reflect.PtrTo(ctxType)
 				for {
 					f := reflect.Indirect(childCtx).Field(0)
-					if f.Type() == ctx.Type() {
-						if f.Kind() == reflect.Ptr {
-							f = f.Elem()
-						}
-						reflect.Indirect(ctx).Set(f)
+					if f.Type() == ctxType {
+						ctx = f
 						break
 					}
 					childCtx = f
