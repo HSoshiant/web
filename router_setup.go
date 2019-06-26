@@ -258,7 +258,7 @@ func (r *Router) depth() int {
 // Private methods:
 //
 
-// Panics unless validation is correct
+// validate contexts
 func validateContext(ctx interface{}, parentCtxType reflect.Type) (*ContextSt, error) {
 	doCheck := func(ctxType reflect.Type, parentCtxType reflect.Type) error {
 		for {
